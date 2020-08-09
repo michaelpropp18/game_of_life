@@ -1,13 +1,47 @@
-const CELL_SIZE = 20;
-const ROW_CELLS = 40;
-const COL_CELLS = 40;
-const GAP = 1;
+/*
+let CELL_SIZE = 10;
+let ROW_CELLS = 50;
+let COL_CELLS = 50;
+let SLEEP_TIME = 0;
+*/
+let ROW_CELLS = 70;
+let COL_CELLS = 70;
+let CELL_SIZE = Math.trunc(600 / ROW_CELLS);;
+let SLEEP_TIME = 0;
 
+let timer = 0;
 let cells = new Array(ROW_CELLS);
 
 function setup() {
+	speed_slider = createSlider(0, 10, 10);
+	speed_slider.position(20, 620);
+	size_slider = createSlider(10, 100, 70);
+	size_slider.position(210, 620);
+	button = createButton('Generate');
+	button.position(420, 620);
+	button.mousePressed(generate);
 	create_cells();
 	createCanvas(windowWidth, windowHeight);
+}
+
+function draw_text() {
+	fill(200);
+	rect(10, 610, 520, 75, 5);
+	textFont('Georgia');
+	textSize(32);
+	fill(255, 255, 255);
+	fill(255, 255, 255);
+	//text('Square Wave Fourier Series', 50, 50);
+	textSize(16);
+	fill(255);
+	stroke(255);
+	text('Speed: ' + speed_slider.value(), 50, 660);
+	text('Grid Size: ' + size_slider.value() + ' X ' + size_slider.value(), 200, 660);
+	fill(255, 0, 0);
+	stroke(255, 0, 0);
+	if (ROW_CELLS != size_slider.value()) {
+		text('Click to update', 400, 660);
+	}
 }
 
 function create_cells() {
@@ -21,6 +55,13 @@ function create_cells() {
 			}
 		}
 	}
+}
+
+function generate() {
+	ROW_CELLS = size_slider.value();
+	COL_CELLS = size_slider.value();
+	CELL_SIZE = Math.trunc(600 / ROW_CELLS);
+	create_cells();
 }
 
 function step() {
@@ -45,6 +86,12 @@ function step() {
 	}
 }
 
+function mouseClicked() {
+	print('the mouse was clicked');
+	print(mouseX);
+	print(mouseY);
+}
+
 function neighbor_count(r, c) {
 	let count = 0;
 	for (let i = r - 1; i <= r + 1; i++) {
@@ -61,27 +108,25 @@ function draw_grid() {
 	for (let r = 0; r < ROW_CELLS; r++) {
 		for (let c = 0; c < COL_CELLS; c++) {
 			if (cells[r][c] == 1) {
-				fill(0);
+				fill(0, 255, 0);
 			} else {
-				fill(255);
+				fill(0);
 			}
-			rect(c * (CELL_SIZE + GAP), r * (CELL_SIZE + GAP), CELL_SIZE, CELL_SIZE);
+			rect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 		}
 	}
 }
 
-// maybe use async instead of this 
-function sleep(milliseconds) {
-	const date = Date.now();
-	let currentDate = null;
-	do {
-		currentDate = Date.now();
-	} while (currentDate - date < milliseconds);
-}
-
 function draw() {
-	background(30, 30, 30);
-	step();
-	draw_grid();
-	//sleep(10);
+	if (millis() >= (-1 * speed_slider.value() * 100 + 1000) + timer) {
+		background(0);
+		fill(0);
+		stroke(0);
+		if (speed_slider.value() != 0) {
+			step();
+		}
+		draw_grid();
+		draw_text();
+		timer = millis();
+	}
 }
