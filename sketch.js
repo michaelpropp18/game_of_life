@@ -1,54 +1,118 @@
-/*
-let CELL_SIZE = 10;
-let ROW_CELLS = 50;
-let COL_CELLS = 50;
-let SLEEP_TIME = 0;
-*/
-let ROW_CELLS = 70;
-let COL_CELLS = 70;
-let CELL_SIZE = Math.trunc(600 / ROW_CELLS);;
-let SLEEP_TIME = 0;
+let ROW_CELLS; // number of rows in the grid
+let COL_CELLS; // number of cols in the grid
+let CELL_SIZE; // size of a cell in pixels
 
-let timer = 0;
-let cells = new Array(ROW_CELLS);
+let timer = 0; // timer used to update draw()
+let cells = new Array(ROW_CELLS); // grid of cells
+
+let paused = false; // determines if user can draw
+
+let pause_button;
+let generate_button;
+
+const START_HEIGHT = 75; // gap between top of screen and start of grid in pixels
+const DESIRED_HEIGHT = 600; // desired height / width of grid in pixels
 
 function setup() {
-	speed_slider = createSlider(0, 10, 10);
-	speed_slider.position(20, 620);
-	size_slider = createSlider(10, 100, 70);
-	size_slider.position(210, 620);
-	button = createButton('Generate');
-	button.position(420, 620);
-	button.mousePressed(generate);
-	create_cells();
+	// set up sliders
+	size_slider = createSlider(10, 100, 50);
+	size_slider.style('width', '200px');
+	size_slider.position(23 + DESIRED_HEIGHT, START_HEIGHT + 60);
+
+	// set up radio buttons
+	create_radio = createRadio();
+	create_radio.option('Random');
+	create_radio.option('Blank');
+	create_radio.value('Random'); // default value
+	create_radio.position(50 + DESIRED_HEIGHT, START_HEIGHT + 130);
+
+	draw_radio = createRadio();
+	draw_radio.option('Draw');
+	draw_radio.option('Erase');
+	draw_radio.value('Draw'); // default value
+	draw_radio.position(55 + DESIRED_HEIGHT, START_HEIGHT + 300);
+
+	// buttons
+	pause_button = createButton('Pause');
+	pause_button.style('width', '150px');
+	pause_button.style('height', '30px');
+	pause_button.position(50 + DESIRED_HEIGHT, START_HEIGHT + 390);
+	pause_button.mousePressed(pause);
+
+	resume_button = createButton('Resume');
+	resume_button.style('width', '150px');
+	resume_button.style('height', '30px');
+	resume_button.position(50 + DESIRED_HEIGHT, START_HEIGHT + 390);
+	resume_button.mousePressed(resume);
+	resume_button.hide();
+
+	generate_button = createButton('Generate');
+	generate_button.position(50 + DESIRED_HEIGHT, START_HEIGHT + 170);
+	generate_button.style('width', '150px');
+	generate_button.style('height', '30px');
+	generate_button.mousePressed(generate);
+
+	generate();
 	createCanvas(windowWidth, windowHeight);
 }
 
+function pause() {
+	if (!paused) {
+		paused = true;
+		pause_button.hide();
+		resume_button.show();
+	}
+}
+
+function resume() {
+	if (paused) {
+		paused = false;
+		resume_button.hide();
+		pause_button.show();
+	}
+}
+
 function draw_text() {
-	fill(200);
-	rect(10, 610, 520, 75, 5);
+	// draw title
 	textFont('Georgia');
 	textSize(32);
-	fill(255, 255, 255);
-	fill(255, 255, 255);
-	//text('Square Wave Fourier Series', 50, 50);
-	textSize(16);
 	fill(255);
+	text('Conway\'s Game of life', 140, 50);
+
+	// draw bottom toolbar rectangle
+	rect(5 + DESIRED_HEIGHT, START_HEIGHT, 240, 240, 5);
+	rect(5 + DESIRED_HEIGHT, START_HEIGHT + 250, 240, 90, 5);
+	rect(5 + DESIRED_HEIGHT, START_HEIGHT + 350, 240, 100, 5);
+
+	//generate new simulation
+	fill(0);
 	stroke(255);
-	text('Speed: ' + speed_slider.value(), 50, 660);
-	text('Grid Size: ' + size_slider.value() + ' X ' + size_slider.value(), 200, 660);
-	fill(255, 0, 0);
-	stroke(255, 0, 0);
-	if (ROW_CELLS != size_slider.value()) {
-		text('Click to update', 400, 660);
-	}
+	textSize(20);
+	text('Generate New Simulation', 12 + DESIRED_HEIGHT, START_HEIGHT + 22);
+	textSize(16);
+	fill(0);
+	stroke(255);
+	text('Grid Size: ' + size_slider.value() + ' X ' + size_slider.value(), 60 + DESIRED_HEIGHT, START_HEIGHT + 100);
+
+	//draw
+	textSize(20);
+	text('Drawing', 88 + DESIRED_HEIGHT, START_HEIGHT + 275);
+
+	//generate new simulation
+	textSize(20);
+	text('Controls', 90 + DESIRED_HEIGHT, START_HEIGHT + 375);
+
+	//instructions
+	fill(255);
+	text('Click on a square to draw', 180, 35 + START_HEIGHT + DESIRED_HEIGHT);
+
 }
 
 function create_cells() {
 	for (let r = 0; r < ROW_CELLS; r++) {
 		cells[r] = new Array(COL_CELLS);
 		for (let c = 0; c < COL_CELLS; c++) {
-			if (Math.random() < 0.5) {
+			if (create_radio.value() == 'Random' && Math.random() < 0.5) {
 				cells[r][c] = 1;
 			} else {
 				cells[r][c] = 0;
@@ -60,7 +124,7 @@ function create_cells() {
 function generate() {
 	ROW_CELLS = size_slider.value();
 	COL_CELLS = size_slider.value();
-	CELL_SIZE = Math.trunc(600 / ROW_CELLS);
+	CELL_SIZE = Math.trunc(DESIRED_HEIGHT / ROW_CELLS);
 	create_cells();
 }
 
@@ -86,10 +150,23 @@ function step() {
 	}
 }
 
+function mouseDragged() {
+	mouseClicked();
+}
+
 function mouseClicked() {
-	print('the mouse was clicked');
-	print(mouseX);
-	print(mouseY);
+	let row = Math.trunc((mouseY - START_HEIGHT) / CELL_SIZE);
+	let col = Math.trunc((mouseX) / CELL_SIZE);
+	if (row >= 0 && row < ROW_CELLS && col >= 0 && col < COL_CELLS) {
+		if (!paused) {
+			pause();
+		} 
+		if (draw_radio.value() == 'Draw') {
+			cells[row][col] = 1;
+		} else {
+			cells[row][col] = 0;
+		}
+	}
 }
 
 function neighbor_count(r, c) {
@@ -108,25 +185,23 @@ function draw_grid() {
 	for (let r = 0; r < ROW_CELLS; r++) {
 		for (let c = 0; c < COL_CELLS; c++) {
 			if (cells[r][c] == 1) {
-				fill(0, 255, 0);
+				fill(255);
 			} else {
-				fill(0);
+				fill(40);
 			}
-			rect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+			rect(c * CELL_SIZE, START_HEIGHT + r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 		}
 	}
 }
 
 function draw() {
-	if (millis() >= (-1 * speed_slider.value() * 100 + 1000) + timer) {
-		background(0);
-		fill(0);
-		stroke(0);
-		if (speed_slider.value() != 0) {
-			step();
-		}
-		draw_grid();
-		draw_text();
-		timer = millis();
+	background(0);
+	fill(0);
+	stroke(0);
+	if (!paused) {
+		step();
 	}
+	draw_grid();
+	draw_text();
+	timer = millis();
 }
